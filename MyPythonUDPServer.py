@@ -13,7 +13,7 @@ def main():
 
     port = int(sys.argv[1])
 
-    print(f"\nServer running on port: {port}")
+    print("\nServer running on port: {}".format(port))
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(('', port))
@@ -24,10 +24,10 @@ def main():
         try:
             buffer, client_address = sock.recvfrom(buffer_size)
 
-            print("\nRequest: ", end="")
+            print("\nRequest: "),
             for byte in buffer:
-                print(f"{byte:02X} ", end="")
-            print()
+                print("{:02X}".format(ord(byte))),
+            print
 
             if len(buffer) < 13:
                 raise ValueError("Buffer is too small to unpack the required header")
@@ -40,10 +40,10 @@ def main():
 
             op_name = op_name_bytes.decode('utf-16')
 
-            print(f"\nRequest ID: {request_id}")
-            print(f"Operation: {op_name}")
-            print(f"Operand 1: {operand_one}")
-            print(f"Operand 2: {operand_two}")
+            print("\nRequest ID: {}".format(request_id))
+            print("Operation: {}".format(op_name))
+            print("Operand 1: {}".format(operand_one))
+            print("Operand 2: {}".format(operand_two))
 
             result = 0
             error = False
@@ -74,21 +74,21 @@ def main():
             response_bytes = struct.pack('!BIHB', 8, result, error_code, request_id)
             sock.sendto(response_bytes, client_address)
 
-            print("\nResponse: ", end="")
+            print("\nResponse: "),
             for byte in response_bytes:
-                print(f"{byte:02X} ", end="")
-            print()
+                print("{:02X}".format(ord(byte))),
+            print
 
-            print(f"\nResponse ID: {request_id}")
-            print(f"Result: {result}")
-            print(f"Error Code: {'Error' if error else 'OK'}")
+            print("\nResponse ID: {}".format(request_id))
+            print("Result: {}".format(result))
+            print("Error Code: {}".format('Error' if error else 'OK'))
 
         except struct.error as e:
-            print(f"Struct error occurred: {e}", file=sys.stderr)
+            print >> sys.stderr, "Struct error occurred: {}".format(e)
         except socket.error as e:
-            print(f"Socket error occurred: {e}", file=sys.stderr)
+            print >> sys.stderr, "Socket error occurred: {}".format(e)
         except Exception as e:
-            print(f"Unexpected error occurred: {e}", file=sys.stderr)
+            print >> sys.stderr, "Unexpected error occurred: {}".format(e)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
