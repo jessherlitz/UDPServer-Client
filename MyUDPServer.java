@@ -14,13 +14,11 @@ public class MyUDPServer {
 
       System.out.println("\nServer running on port: " + port);
 
-      
       byte[] buffer = new byte[1024];
       DatagramSocket sock = new DatagramSocket(port);
 
       while (true) {
         try {
-
           DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
           sock.receive(packet);
           
