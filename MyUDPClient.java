@@ -4,6 +4,8 @@ import java.util.Scanner;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.InputMismatchException;
 
 public class MyUDPClient {
 
@@ -20,10 +22,12 @@ public class MyUDPClient {
       int destPort = Integer.parseInt(args[1]);
       
       Scanner scanner = new Scanner(System.in);
-      short requestId = 0;
+      short requestId = 1;
+      ArrayList<Long> dataCollection = new ArrayList<>();
 
       while (true) {
-            System.out.print("Enter OpCode (0 for +, 1 for -, 2 for |, 3 for &, 4 for /, 5 for *): ");
+        try {
+            System.out.print("\nEnter OpCode (0 for +, 1 for -, 2 for |, 3 for &, 4 for /, 5 for *): ");
             byte opCode = scanner.nextByte();
 
             System.out.print("Enter Operand 1: ");
@@ -85,6 +89,8 @@ public class MyUDPClient {
 
             sock.send(message);
 
+
+            System.out.printf("\nRequest: ");
             for (byte b : requestBytes) {
                 System.out.printf("%02X ", b);
             }
@@ -97,9 +103,13 @@ public class MyUDPClient {
           sock.receive(responsePacket);
 
           long endTime = System.currentTimeMillis();
+          long rtt = endTime - startTime;
+
+          dataCollection.add(rtt);
 
           ByteBuffer responseByteBuffer = ByteBuffer.wrap(responseBuffer, 0, responsePacket.getLength());
 
+          System.out.printf("\nResponse: ");
           for (int i = 0; i < responsePacket.getLength(); i++) {
             System.out.printf("%02X ", responseBuffer[i]);
           }
@@ -110,21 +120,35 @@ public class MyUDPClient {
           byte errorCode = responseByteBuffer.get();
           short responseRequestId = responseByteBuffer.getShort();
 
-          System.out.println("Response ID: " + responseRequestId);
+          System.out.println("\nResponse ID: " + responseRequestId);
           System.out.println("Result: " + result);
           System.out.println("Error Code: " + (errorCode == 0 ? "OK" : "Error" + errorCode));
 
-          System.out.println("Round trip time: " + (endTime - startTime) + " ms");
+          System.out.println("\nRound trip time: " + rtt + " ms");
+
+          long minRTT = dataCollection.stream().min(Long::compare).orElse(0L);
+          long maxRTT = dataCollection.stream().max(Long::compare).orElse(0L);
+          double averageRTT = dataCollection.stream().mapToLong(Long::longValue).average().orElse(0.0);
+
+          System.out.println("\nMin RTT: " + minRTT + " ms");
+          System.out.println("Max RTT: " + maxRTT + " ms");
+          System.out.println("Average RTT: " + averageRTT + " ms");
 
           requestId++;
 
-          System.out.print("Do you want to send another request? (yes/no): ");
+          System.out.print("\nDo you want to send another request? (yes/no): ");
 
           String answer = scanner.nextLine();
 
           if (!answer.equalsIgnoreCase("yes")) {
             break;
           }
+        } catch (InputMismatchException e) {
+          System.out.println("Invalid input. Please enter valid numeric values.");
+          scanner.nextLine(); 
+        } catch (Exception e) {
+          System.out.println("An error occurred: " + e.getMessage());
+        }
       }
 
        scanner.close();
